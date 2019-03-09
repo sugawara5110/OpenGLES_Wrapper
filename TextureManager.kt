@@ -5,6 +5,7 @@ import android.opengl.GLUtils
 import android.graphics.BitmapFactory
 import android.graphics.Bitmap.Config
 import android.content.res.Resources
+import jp.sugasato.fbxloaderkt.nameComparison
 import java.util.*
 
 object TextureManager {
@@ -35,6 +36,18 @@ object TextureManager {
         bmp.recycle()
         //テクスチャ名とテクスチャIdを組で登録
         texNameId[texName] = textureId[0]
+    }
+
+    fun getTextureId(texName: CharArray): Int? {
+        val keys = ArrayList(texNameId.keys)
+        var hitString: String? = null
+        for (key in keys) {
+            if (nameComparison(texName, key)) {
+                hitString = key
+                break
+            }
+        }
+        return texNameId[hitString]
     }
 
     fun getTextureId(texName: String): Int? {

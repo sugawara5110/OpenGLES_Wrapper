@@ -7,7 +7,8 @@ import java.nio.IntBuffer
 import android.opengl.GLES30
 
 class DrawParameter {
-    var textureId: Int = 0
+    var diffTexId: Int = 0
+    var norTexId: Int = 0
     var MVPMatrixHandle: Int = 0
     var WorldMatrixHandle: Int = 0
     var DiffuseHandle: Int = 0
@@ -19,31 +20,31 @@ class DrawParameter {
 
 object Core {
 
-    private const val floatSize = 4
-    private const val intSize = 4
-    private const val numVertex = 3
-    private const val numNormal = 3
-    private const val numUV = 2
-    private const val numVerNor = 6
-    private const val numVerNorUV = 8
-    private const val VerSize = numVertex * floatSize
-    private const val VerNorSize = numVerNor * floatSize
-    private const val VerNorUVSize = numVerNorUV * floatSize
+    const val floatSize = 4
+    const val intSize = 4
+    const val numVertex = 3
+    const val numNormal = 3
+    const val numUV = 2
+    const val numVerNor = 6
+    const val numVerNorUV = 8
+    const val VerSize = numVertex * floatSize
+    const val VerNorSize = numVerNor * floatSize
+    const val VerNorUVSize = numVerNorUV * floatSize
 
     private var width = 0
     private var height = 0
     private var DirLight = floatArrayOf(0.0f, -1.0f, -0.2f)
-    private val fovy = 45.0f//画角
-    private val zNear = 1.0f
-    private val zFar = 170.0f
-    private val eyeX = 0.0f
-    private val eyeY = 0.0f
-    private val eyeZ = 100.0f//視点
-    private val centerX = 0.0f
-    private val centerY = 0.0f
-    private val centerZ = 0.0f//注視点
-    private val upX = 0.0f
-    private val upY = 1.0f
+    private var fovy = 45.0f//画角
+    private var zNear = 1.0f
+    private var zFar = 170.0f
+    private var eyeX = 0.0f
+    private var eyeY = 0.0f
+    private var eyeZ = 100.0f//視点
+    private var centerX = 0.0f
+    private var centerY = 0.0f
+    private var centerZ = 0.0f//注視点
+    private var upX = 0.0f
+    private var upY = 1.0f
     private var upZ = 0.0f//上方向
     private val Look = FloatArray(16)//視点
     private val Per = FloatArray(16)
@@ -58,9 +59,6 @@ object Core {
     fun surfaceChanged(wid: Int, hei: Int) {
         width = wid
         height = hei
-        //DepthTest有効
-        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
-        GLES30.glDepthFunc(GLES30.GL_LEQUAL)
         //スクリーンが変わり画角を変更する場合、射影行列を作り直す
         GLES30.glViewport(0, 0, width, height)
         //アルファブレンド有効
@@ -77,7 +75,10 @@ object Core {
     }
 
     fun setPerspective(fov: Float, znear: Float, zfar: Float) {
-        MatrixPerspectiveFovLH(Per, fov, width.toFloat() / height.toFloat(), znear, zfar)
+        fovy = fov
+        zNear = znear
+        zFar = zfar
+        MatrixPerspectiveFovLH(Per, fovy, width.toFloat() / height.toFloat(), zNear, zFar)
     }
 
     fun setCamera(
@@ -91,7 +92,16 @@ object Core {
         upy: Float = 1.0f,
         upz: Float = 0.0f
     ) {
-        MatrixLookAtLH(Look, ex, ey, ez, cx, cy, cz, upx, upy, upz)
+        eyeX = ex
+        eyeY = ey
+        eyeZ = ez
+        centerX = cx
+        centerY = cy
+        centerZ = cz
+        upX = upx
+        upY = upy
+        upZ = upz
+        MatrixLookAtLH(Look, eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ)
     }
 
     fun setDirLight(x: Float, y: Float, z: Float) {
@@ -145,12 +155,23 @@ object Core {
         GLES30.glFinish()
     }
 
+    fun DepthTestOn() {
+        //DepthTest有効
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
+        GLES30.glDepthFunc(GLES30.GL_LEQUAL)
+    }
+
+    fun DepthTestOff() {
+        //DepthTest無効
+        GLES30.glDisable(GLES30.GL_DEPTH_TEST)
+    }
+
     fun draw(vaoId: Int, numIndex: Int, world: FloatArray, dp: DrawParameter) {
         updateMatrix(world)
         //テクスチャ有効化
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         //テクスチャオブジェクトの指定
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dp.textureId)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dp.diffTexId)
         GLES30.glBindVertexArray(vaoId)
         GLES30.glUniformMatrix4fv(dp.MVPMatrixHandle, 1, false, mMVPMatrix, 0)
         GLES30.glUniformMatrix4fv(dp.WorldMatrixHandle, 1, false, world, 0)
