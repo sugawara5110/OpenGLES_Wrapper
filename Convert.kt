@@ -1,7 +1,6 @@
 package jp.sugasato.opengles_wrapperkt
 
 import kotlin.math.cos
-import kotlin.math.pow
 import kotlin.math.sin
 
 fun MatrixScaling(mat: FloatArray, sx: Float, sy: Float, sz: Float) {

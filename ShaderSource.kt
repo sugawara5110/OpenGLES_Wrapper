@@ -21,6 +21,57 @@ object ShaderSource {
                     + "   gl_Position = u_MVPMatrix * a_Position;\n"
                     + "}\n")
 
+    //バーテックスシェーダSkinMesh
+    const val vertexShaderSkinMesh = (
+            "#version 300 es\n"
+                    + "uniform mat4 u_MVPMatrix;\n"
+                    + "uniform mat4 u_WorldMatrix;\n"
+                    + "uniform mat4 u_BoneMatrix[128];\n"
+                    + "in vec4 a_Position;\n"
+                    + "in vec4 a_Normal;\n"
+                    + "in vec2 a_Uv;\n"
+                    + "in vec4 a_BoneInd;\n"
+                    + "in vec4 a_BoneWei;\n"
+
+                    + "out vec3 v_Normal;\n"
+                    + "out vec2 v_Uv;\n"
+
+                    + "void main()\n"
+                    + "{\n"
+                    //スキニング
+                    + "   vec4 sPos = a_Position;\n"
+                    + "   vec3 sNor = a_Normal.xyz;\n"
+                    //Bone1
+                    + "   int iBone = int(a_BoneInd.x);\n"//1個目のBoneIndex取り出し
+                    + "   float fwei = a_BoneWei.x;\n"//1個目のBoneWeight取り出し
+                    + "   mat4 m = u_BoneMatrix[iBone];\n"//姿勢行列配列からiBone番目行列取り出し
+                    + "   sPos += fwei * (sPos * m);\n"//スキニング後頂点 = 頂点ウエイト * 頂点 * 姿勢行列
+                    + "   sNor += fwei * (sNor * mat3(m));\n"//スキニング後法線 = 頂点ウエイト * 法線 * 姿勢行列
+
+                    //Bone2
+                    + "   iBone = int(a_BoneInd.y);\n"
+                    + "   fwei = a_BoneWei.y;\n"
+                    + "   m = u_BoneMatrix[iBone];\n"
+                    + "   sPos += fwei * (sPos * m);\n"
+                    + "   sNor += fwei * (sNor * mat3(m));\n"
+                    //Bone3
+                    + "   iBone = int(a_BoneInd.z);\n"
+                    + "   fwei = a_BoneWei.z;\n"
+                    + "   m = u_BoneMatrix[iBone];\n"
+                    + "   sPos += fwei * (sPos * m);\n"
+                    + "   sNor += fwei * (sNor * mat3(m));\n"
+                    //Bone4
+                    + "   iBone = int(a_BoneInd.w);\n"
+                    + "   fwei = a_BoneWei.w;\n"
+                    + "   m = u_BoneMatrix[iBone];\n"
+                    + "   sPos += fwei * (sPos * m);\n"
+                    + "   sNor += fwei * (sNor * mat3(m));\n"
+
+                    + "   v_Normal = normalize(mat3(u_WorldMatrix) * sNor);\n"
+                    + "   v_Uv = a_Uv;\n"
+                    + "   gl_Position = u_MVPMatrix * sPos;\n"
+                    + "}\n")
+
     //フラグメントシェーダ3D
     const val fragmentShader3D = (
             "#version 300 es\n"

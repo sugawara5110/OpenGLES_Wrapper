@@ -22,11 +22,13 @@ class BasicPolygon {
         normalhandle: Int,
         uvhandle: Int,
         allVertices: FloatArray?,
-        index: IntArray?
+        index: IntArray?,
+        boneIndhandle: Int = 0,
+        boneWeihandle: Int = 0
     ) {
         dp = Dp
         numIndex = index!!.size
-        vaoId = Core.bindBufferObj(poshandle, normalhandle, uvhandle, allVertices, index)
+        vaoId = Core.bindBufferObj(poshandle, normalhandle, uvhandle, allVertices, index, boneIndhandle, boneWeihandle)
         created = true
     }
 
@@ -39,7 +41,8 @@ class BasicPolygon {
         thez: Float = 0.0f,
         scax: Float = 1.0f,
         scay: Float = 1.0f,
-        scaz: Float = 1.0f
+        scaz: Float = 1.0f,
+        boneMatrix: FloatArray? = null
     ) {
         if (!created) return
         MatrixRotationX(thetaMatX, thex)
@@ -52,6 +55,6 @@ class BasicPolygon {
         MatrixMultiply(scro, thetaMatZYX, scale)
         MatrixMultiply(world, scro, mov)
 
-        Core.draw(vaoId, numIndex, world, dp)
+        Core.draw(vaoId, numIndex, world, dp, boneMatrix)
     }
 }

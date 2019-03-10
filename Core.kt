@@ -11,6 +11,7 @@ class DrawParameter {
     var norTexId: Int = 0
     var MVPMatrixHandle: Int = 0
     var WorldMatrixHandle: Int = 0
+    var BoneMatrixHandle: Int = 0
     var DiffuseHandle: Int = 0
     var AmbientHandle: Int = 0
     var DirLightHandle: Int = 0
@@ -30,6 +31,12 @@ object Core {
     const val VerSize = numVertex * floatSize
     const val VerNorSize = numVerNor * floatSize
     const val VerNorUVSize = numVerNorUV * floatSize
+    const val numBoneWei = 4
+    const val boneIndSize = numBoneWei * intSize
+    const val boneWeiSize = numBoneWei * floatSize
+    const val VerNorUVBoneIndSize = VerNorUVSize + boneIndSize
+    const val numVerNorUVBoneIndWei = numVerNorUV + numBoneWei * 2
+    const val VerNorUVBoneIndWeiSize = VerNorUVSize + boneWeiSize + boneIndSize
 
     private var width = 0
     private var height = 0
@@ -110,7 +117,15 @@ object Core {
         DirLight[2] = z
     }
 
-    fun bindBufferObj(poshandle: Int, norhandle: Int, uvhandle: Int, allVertices: FloatArray?, index: IntArray?): Int {
+    fun bindBufferObj(
+        poshandle: Int,
+        norhandle: Int,
+        uvhandle: Int,
+        allVertices: FloatArray?,
+        index: IntArray?,
+        boneIndhandle: Int = 0,
+        boneWeihandle: Int = 0
+    ): Int {
         val vboId = IntArray(2)
         val vaoId = IntArray(1)
         GLES30.glGenBuffers(2, vboId, 0)
@@ -130,9 +145,35 @@ object Core {
         GLES30.glEnableVertexAttribArray(poshandle)
         GLES30.glEnableVertexAttribArray(norhandle)
         GLES30.glEnableVertexAttribArray(uvhandle)
-        GLES30.glVertexAttribPointer(poshandle, numVertex, GLES30.GL_FLOAT, false, VerNorUVSize, 0)
-        GLES30.glVertexAttribPointer(norhandle, numNormal, GLES30.GL_FLOAT, false, VerNorUVSize, VerSize)
-        GLES30.glVertexAttribPointer(uvhandle, numUV, GLES30.GL_FLOAT, false, VerNorUVSize, VerNorSize)
+        if (boneIndhandle != 0) {
+            GLES30.glEnableVertexAttribArray(boneIndhandle)
+            GLES30.glEnableVertexAttribArray(boneWeihandle)
+        }
+        if (boneIndhandle == 0) {
+            GLES30.glVertexAttribPointer(poshandle, numVertex, GLES30.GL_FLOAT, false, VerNorUVSize, 0)
+            GLES30.glVertexAttribPointer(norhandle, numNormal, GLES30.GL_FLOAT, false, VerNorUVSize, VerSize)
+            GLES30.glVertexAttribPointer(uvhandle, numUV, GLES30.GL_FLOAT, false, VerNorUVSize, VerNorSize)
+        } else {
+            GLES30.glVertexAttribPointer(poshandle, numVertex, GLES30.GL_FLOAT, false, VerNorUVBoneIndWeiSize, 0)
+            GLES30.glVertexAttribPointer(norhandle, numNormal, GLES30.GL_FLOAT, false, VerNorUVBoneIndWeiSize, VerSize)
+            GLES30.glVertexAttribPointer(uvhandle, numUV, GLES30.GL_FLOAT, false, VerNorUVBoneIndWeiSize, VerNorSize)
+            GLES30.glVertexAttribPointer(
+                boneIndhandle,
+                numBoneWei,
+                GLES30.GL_FLOAT,
+                false,
+                VerNorUVBoneIndWeiSize,
+                VerNorUVSize
+            )
+            GLES30.glVertexAttribPointer(
+                boneWeihandle,
+                numBoneWei,
+                GLES30.GL_FLOAT,
+                false,
+                VerNorUVBoneIndWeiSize,
+                VerNorUVBoneIndSize
+            )
+        }
         GLES30.glBindVertexArray(0)
         return vaoId[0]
     }
@@ -166,15 +207,20 @@ object Core {
         GLES30.glDisable(GLES30.GL_DEPTH_TEST)
     }
 
-    fun draw(vaoId: Int, numIndex: Int, world: FloatArray, dp: DrawParameter) {
-        updateMatrix(world)
+    fun draw(vaoId: Int, numIndex: Int, worldMatrix: FloatArray, dp: DrawParameter, boneMatrix: FloatArray? = null) {
+        updateMatrix(worldMatrix)
         //テクスチャ有効化
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         //テクスチャオブジェクトの指定
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dp.diffTexId)
         GLES30.glBindVertexArray(vaoId)
         GLES30.glUniformMatrix4fv(dp.MVPMatrixHandle, 1, false, mMVPMatrix, 0)
-        GLES30.glUniformMatrix4fv(dp.WorldMatrixHandle, 1, false, world, 0)
+        GLES30.glUniformMatrix4fv(dp.WorldMatrixHandle, 1, false, worldMatrix, 0)
+        if (boneMatrix != null) {
+            val numMat = boneMatrix.size / 16
+            GLES30.glUniformMatrix4fv(dp.BoneMatrixHandle, numMat, false, boneMatrix, 0)
+
+        }
         GLES30.glUniform4f(dp.DiffuseHandle, dp.Diffuse[0], dp.Diffuse[1], dp.Diffuse[2], dp.Diffuse[3])
         GLES30.glUniform4f(dp.AmbientHandle, dp.Ambient[0], dp.Ambient[1], dp.Ambient[2], dp.Ambient[3])
         GLES30.glUniform3f(dp.DirLightHandle, DirLight[0], DirLight[1], DirLight[2])

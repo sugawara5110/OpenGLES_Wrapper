@@ -6,13 +6,12 @@ import android.graphics.BitmapFactory
 import android.graphics.Bitmap.Config
 import android.content.res.Resources
 import jp.sugasato.fbxloaderkt.nameComparison
-import java.util.*
 
 object TextureManager {
 
     private val options = BitmapFactory.Options()
     //テクスチャ名とテクスチャIdの組
-    private val texNameId = Hashtable<String, Int>()
+    private val texNameId = HashMap<String, Int>()
 
     init {
         //リソース自動リサイズ無し

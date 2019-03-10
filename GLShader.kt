@@ -4,81 +4,106 @@ import android.opengl.GLES30
 
 object GLShader {
 
-    private val mProgramHandle = IntArray(2)
-    private val mMVPMatrixHandle = IntArray(2)//u_MVPMatrixのハンドル
-    private val mWorldMatrixHandle = IntArray(2)//u_WorldMatrixのハンドル
-    private val mDiffuseHandle = IntArray(2)//u_Diffuseのハンドル
-    private val mAmbientHandle = IntArray(2)//u_Ambientのハンドル
-    private val mDirLightHandle = IntArray(2)//u_DirLightのハンドル
-    private val mPositionHandle = IntArray(2)//a_Positionのハンドル
-    private val mNormalHandle = IntArray(2)//a_Normalのハンドル
-    private val mUvHandle = IntArray(2)
+    const val Basic3D = "Basic3D"
+    const val SkinMesh = "SkinMesh"
+    const val B2D = "2D"
+    private val mProgramHandle = HashMap<String?, Int>()
+    private val mMVPMatrixHandle = HashMap<String?, Int>()//u_MVPMatrixのハンドル
+    private val mWorldMatrixHandle = HashMap<String?, Int>()//u_WorldMatrixのハンドル
+    private val mDiffuseHandle = HashMap<String?, Int>()//u_Diffuseのハンドル
+    private val mAmbientHandle = HashMap<String?, Int>()//u_Ambientのハンドル
+    private val mDirLightHandle = HashMap<String?, Int>()//u_DirLightのハンドル
+    private val mPositionHandle = HashMap<String?, Int>()//a_Positionのハンドル
+    private val mNormalHandle = HashMap<String?, Int>()//a_Normalのハンドル
+    private val mUvHandle = HashMap<String?, Int>()
+    //SkinMesh
+    private var mBoneMatrixHandle: Int = 0//u_BoneMatrixのハンドル
+    private var mBoneIndHandle: Int = 0//a_BoneIndのハンドル
+    private var mBoneWeiHandle: Int = 0//a_BoneWeiのハンドル
+    //2D用
     private var transformHandle: Int = 0
     private var uvwhHandle: Int = 0
-    private var ind = 0
+    private var ind: String? = null
 
-    fun programHandle(ind: Int): Int {
+    fun programHandle(ind: String): Int? {
         return mProgramHandle[ind]
     }
 
-    fun mvpMatrixHandle(ind: Int): Int {
+    fun mvpMatrixHandle(ind: String): Int? {
         return mMVPMatrixHandle[ind]
     }
 
-    fun worldMatrixHandle(ind: Int): Int {
+    fun worldMatrixHandle(ind: String): Int? {
         return mWorldMatrixHandle[ind]
     }
 
-    fun DiffuseHandle(ind: Int): Int {
+    fun DiffuseHandle(ind: String): Int? {
         return mDiffuseHandle[ind]
     }
 
-    fun AmbientHandle(ind: Int): Int {
+    fun AmbientHandle(ind: String): Int? {
         return mAmbientHandle[ind]
     }
 
-    fun DirLightHandle(ind: Int): Int {
+    fun DirLightHandle(ind: String): Int? {
         return mDirLightHandle[ind]
     }
 
-    fun positionHandle(ind: Int): Int {
+    fun positionHandle(ind: String): Int? {
         return mPositionHandle[ind]
     }
 
-    fun normalHandle(ind: Int): Int {
+    fun normalHandle(ind: String): Int? {
         return mNormalHandle[ind]
     }
 
-    fun uvHandle(ind: Int): Int {
+    fun uvHandle(ind: String): Int? {
         return mUvHandle[ind]
     }
 
+    fun boneMatrixHandle(): Int {
+        return mBoneMatrixHandle
+    }
+
+    fun boneIndHandle(): Int {
+        return mBoneIndHandle
+    }
+
+    fun boneWeiHandle(): Int {
+        return mBoneWeiHandle
+    }
+
     fun createShader() {
-        create3DShader()
+        ind = Basic3D
+        create3DShader(ShaderSource.vertexShader3D)
+        ind = SkinMesh
+        create3DShader(ShaderSource.vertexShaderSkinMesh)
+        ind = B2D
         create2DShader()
     }
 
-    private fun create3DShader() {
-        ind = 0
-        createShader(ShaderSource.vertexShader3D, ShaderSource.fragmentShader3D)
-        mMVPMatrixHandle[0] = GLES30.glGetUniformLocation(mProgramHandle[0], "u_MVPMatrix")
-        mWorldMatrixHandle[0] = GLES30.glGetUniformLocation(mProgramHandle[0], "u_WorldMatrix")
-        mDiffuseHandle[0] = GLES30.glGetUniformLocation(mProgramHandle[0], "u_Diffuse")
-        mAmbientHandle[0] = GLES30.glGetUniformLocation(mProgramHandle[0], "u_Ambient")
-        mDirLightHandle[0] = GLES30.glGetUniformLocation(mProgramHandle[0], "u_DirLight")
+    private fun create3DShader(vs: String) {
+        createShader(vs, ShaderSource.fragmentShader3D)
+        mMVPMatrixHandle[ind] = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_MVPMatrix")
+        mWorldMatrixHandle[ind] = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_WorldMatrix")
+        if (ind!!.compareTo(SkinMesh) == 0) {
+            mBoneMatrixHandle = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_BoneMatrix")
+        }
+        mDiffuseHandle[ind] = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_Diffuse")
+        mAmbientHandle[ind] = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_Ambient")
+        mDirLightHandle[ind] = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_DirLight")
     }
 
     private fun create2DShader() {
-        ind = 1
         createShader(ShaderSource.vertexShader2D, ShaderSource.fragmentShader2D)
-        transformHandle = GLES30.glGetUniformLocation(mProgramHandle[1], "u_Transform")
-        uvwhHandle = GLES30.glGetUniformLocation(mProgramHandle[1], "u_UvWH")
+        transformHandle = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_Transform")
+        uvwhHandle = GLES30.glGetUniformLocation(mProgramHandle[ind]!!, "u_UvWH")
     }
 
-    fun startProgram(Ind: Int) {
+    fun startProgram(Ind: String) {
         //シェーダプログラム適用
         ind = Ind
-        GLES30.glUseProgram(mProgramHandle[ind])
+        GLES30.glUseProgram(mProgramHandle[ind]!!)
     }
 
     fun stopProgram() {
@@ -88,8 +113,9 @@ object GLShader {
 
     fun releaseProgram() {
         //プログラム解放
-        GLES30.glDeleteProgram(mProgramHandle[0])
-        GLES30.glDeleteProgram(mProgramHandle[1])
+        GLES30.glDeleteProgram(mProgramHandle[Basic3D]!!)
+        GLES30.glDeleteProgram(mProgramHandle[SkinMesh]!!)
+        GLES30.glDeleteProgram(mProgramHandle[B2D]!!)
     }
 
     private fun createShader(vs: String, fs: String) {
@@ -105,20 +131,28 @@ object GLShader {
         GLES30.glDeleteShader(fragmentShaderHandle)
 
         // ハンドル(ポインタ)の取得
-        mPositionHandle[ind] = GLES30.glGetAttribLocation(mProgramHandle[ind], "a_Position")
-        mNormalHandle[ind] = GLES30.glGetAttribLocation(mProgramHandle[ind], "a_Normal")
-        mUvHandle[ind] = GLES30.glGetAttribLocation(mProgramHandle[ind], "a_Uv")
+        mPositionHandle[ind] = GLES30.glGetAttribLocation(mProgramHandle[ind]!!, "a_Position")
+        mNormalHandle[ind] = GLES30.glGetAttribLocation(mProgramHandle[ind]!!, "a_Normal")
+        mUvHandle[ind] = GLES30.glGetAttribLocation(mProgramHandle[ind]!!, "a_Uv")
+        if (ind!!.compareTo(SkinMesh) == 0) {
+            mBoneIndHandle = GLES30.glGetAttribLocation(mProgramHandle[ind]!!, "a_BoneInd")
+            mBoneWeiHandle = GLES30.glGetAttribLocation(mProgramHandle[ind]!!, "a_BoneWei")
+        }
     }
 
     private fun AttachShader(vsHandle: Int, fsHandle: Int): Int {
         //シェーダプログラムをリンク
         var progHandle = GLES30.glCreateProgram()
         if (progHandle != 0) {
-            GLES30.glAttachShader(progHandle, vsHandle) // バーテックスシェーダをアタッチ
-            GLES30.glAttachShader(progHandle, fsHandle) // フラグメントシェーダをアタッチ
-            GLES30.glBindAttribLocation(progHandle, 0, "a_Position") // attributeのindexを設定
-            GLES30.glBindAttribLocation(progHandle, 1, "a_Normal") // attributeのindexを設定
-            GLES30.glBindAttribLocation(progHandle, 2, "a_Uv") // attributeのindexを設定
+            GLES30.glAttachShader(progHandle, vsHandle) //バーテックスシェーダをアタッチ
+            GLES30.glAttachShader(progHandle, fsHandle) //フラグメントシェーダをアタッチ
+            GLES30.glBindAttribLocation(progHandle, 0, "a_Position") //attributeのindexを設定
+            GLES30.glBindAttribLocation(progHandle, 1, "a_Normal")
+            GLES30.glBindAttribLocation(progHandle, 2, "a_Uv")
+            if (ind!!.compareTo(SkinMesh) == 0) {
+                GLES30.glBindAttribLocation(progHandle, 3, "a_BoneInd")
+                GLES30.glBindAttribLocation(progHandle, 4, "a_BoneWei")
+            }
             GLES30.glLinkProgram(progHandle) // バーテックスシェーダとフラグメントシェーダをプログラムへリンク
 
             // リンク結果のチェック
