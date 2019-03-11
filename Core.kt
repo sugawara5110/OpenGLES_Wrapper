@@ -68,10 +68,6 @@ object Core {
         height = hei
         //スクリーンが変わり画角を変更する場合、射影行列を作り直す
         GLES30.glViewport(0, 0, width, height)
-        //アルファブレンド有効
-        GLES30.glEnable(GLES30.GL_BLEND)
-        //合成アルゴリズム, これから描画する画像係数, すでに描画した画像係数
-        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
         //カリングの有効化
         GLES30.glEnable(GLES30.GL_CULL_FACE)
         // 裏面を描画しない
@@ -196,6 +192,18 @@ object Core {
         GLES30.glFinish()
     }
 
+    fun ALPHAlBlendOn() {
+        //アルファブレンド有効
+        GLES30.glEnable(GLES30.GL_BLEND)
+        //合成アルゴリズム, これから描画する画像係数, すでに描画した画像係数
+        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
+    }
+
+    fun ALPHAlBlendOff() {
+        //アルファブレンド無効
+        GLES30.glDisable(GLES30.GL_BLEND)
+    }
+
     fun DepthTestOn() {
         //DepthTest有効
         GLES30.glEnable(GLES30.GL_DEPTH_TEST)
@@ -219,7 +227,6 @@ object Core {
         if (boneMatrix != null) {
             val numMat = boneMatrix.size / 16
             GLES30.glUniformMatrix4fv(dp.BoneMatrixHandle, numMat, false, boneMatrix, 0)
-
         }
         GLES30.glUniform4f(dp.DiffuseHandle, dp.Diffuse[0], dp.Diffuse[1], dp.Diffuse[2], dp.Diffuse[3])
         GLES30.glUniform4f(dp.AmbientHandle, dp.Ambient[0], dp.Ambient[1], dp.Ambient[2], dp.Ambient[3])

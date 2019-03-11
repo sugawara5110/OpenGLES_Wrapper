@@ -45,27 +45,26 @@ object ShaderSource {
                     + "   int iBone = int(a_BoneInd.x);\n"//1個目のBoneIndex取り出し
                     + "   float fwei = a_BoneWei.x;\n"//1個目のBoneWeight取り出し
                     + "   mat4 m = u_BoneMatrix[iBone];\n"//姿勢行列配列からiBone番目行列取り出し
-                    + "   sPos += fwei * (sPos * m);\n"//スキニング後頂点 = 頂点ウエイト * 頂点 * 姿勢行列
-                    + "   sNor += fwei * (sNor * mat3(m));\n"//スキニング後法線 = 頂点ウエイト * 法線 * 姿勢行列
-
+                    + "   sPos += (m * sPos) * fwei;\n"//スキニング後頂点 = 姿勢行列 * 頂点 * 頂点ウエイト(DirectXとは逆)
+                    + "   sNor += (mat3(m) * sNor) * fwei;\n"//スキニング後法線 = 姿勢行列 * 法線 * 頂点ウエイト
                     //Bone2
                     + "   iBone = int(a_BoneInd.y);\n"
                     + "   fwei = a_BoneWei.y;\n"
                     + "   m = u_BoneMatrix[iBone];\n"
-                    + "   sPos += fwei * (sPos * m);\n"
-                    + "   sNor += fwei * (sNor * mat3(m));\n"
+                    + "   sPos += (m * sPos) * fwei;\n"
+                    + "   sNor += (mat3(m) * sNor) * fwei;\n"
                     //Bone3
                     + "   iBone = int(a_BoneInd.z);\n"
                     + "   fwei = a_BoneWei.z;\n"
                     + "   m = u_BoneMatrix[iBone];\n"
-                    + "   sPos += fwei * (sPos * m);\n"
-                    + "   sNor += fwei * (sNor * mat3(m));\n"
+                    + "   sPos += (m * sPos) * fwei;\n"
+                    + "   sNor += (mat3(m) * sNor) * fwei;\n"
                     //Bone4
                     + "   iBone = int(a_BoneInd.w);\n"
                     + "   fwei = a_BoneWei.w;\n"
                     + "   m = u_BoneMatrix[iBone];\n"
-                    + "   sPos += fwei * (sPos * m);\n"
-                    + "   sNor += fwei * (sNor * mat3(m));\n"
+                    + "   sPos += (m * sPos) * fwei;\n"
+                    + "   sNor += (mat3(m) * sNor) * fwei;\n"
 
                     + "   v_Normal = normalize(mat3(u_WorldMatrix) * sNor);\n"
                     + "   v_Uv = a_Uv;\n"

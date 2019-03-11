@@ -15,7 +15,7 @@ class SkinMesh {
     private var newPose: FloatArray? = null
     private var bone: FloatArray? = null
     private var currentframe = 0.0f
-    private var endframe = 1000.0f
+    private var endframe = 600.0f
 
     fun create(con: Context, rawId: Int) {
         fbx.setFbxFile(con, rawId)
@@ -27,7 +27,7 @@ class SkinMesh {
         bp = Array<BasicPolygon?>(numMesh, { i -> BasicPolygon() })
         dp = Array<DrawParameter?>(numMesh, { i -> DrawParameter() })
         //各meshデータ読み込み
-        for (i: Int in 0..numMesh - 1) {
+        for (i: Int in 0 until numMesh) {
             val mesh = fbx.getFbxMeshNode(i)
             val index = mesh!!.GetPolygonVertices()
             val ver = mesh.GetVertices()
@@ -40,7 +40,7 @@ class SkinMesh {
             }
             if (mesh.getNormalTextureName(0).getName() != null) {
                 val norName = getNameFromPass(mesh.getNormalTextureName(0).getName())
-                //dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
+                dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
             }
             dp!![i]!!.MVPMatrixHandle = GLShader.mvpMatrixHandle(GLShader.SkinMesh)!!
             dp!![i]!!.WorldMatrixHandle = GLShader.worldMatrixHandle(GLShader.SkinMesh)!!
@@ -61,7 +61,7 @@ class SkinMesh {
             val numBoneWei = 4
             val boneWeightArr = FloatArray(numBoneWei * mesh.GetNumVertices(), { 0.0f })
             val boneWeightIndArr = IntArray(numBoneWei * mesh.GetNumVertices(), { 0 })
-            for (i1 in 0..mesh.GetNumDeformer() - 1) {
+            for (i1 in 0 until mesh.GetNumDeformer()) {
                 val defo = mesh.getDeformer(i1)//meshのDeformer(i1)
                 val bNum = defo!!.getIndicesCnt()//このボーンに影響を受ける頂点インデックス数
                 val bInd = defo.GetIndices()//このボーンに影響を受ける頂点のインデックス配列
@@ -81,11 +81,25 @@ class SkinMesh {
                 }
             }
 
+            //ウエイト正規化
+            for (i1 in 0 until mesh.GetNumVertices()) {
+                var we = 0.0f
+                for (m in 0..3) {
+                    val ind = i1 * numBoneWei + m
+                    we += boneWeightArr[ind]
+                }
+                val we1 = 1.0f / we
+                for (m in 0..3) {
+                    val ind = i1 * numBoneWei + m
+                    boneWeightArr[ind] *= we1
+                }
+            }
+
             val allVertices = FloatArray(Core.numVerNorUVBoneIndWei * mesh.GetNumPolygonVertices())
             var nCnt = 0
             var uvCnt = 0
             var aCnt = 0
-            for (i1 in 0..mesh.GetNumPolygonVertices() - 1) {
+            for (i1 in 0 until mesh.GetNumPolygonVertices()) {
                 allVertices[aCnt++] = ver!![index!![i1] * 3].toFloat()
                 allVertices[aCnt++] = ver[index[i1] * 3 + 1].toFloat()
                 allVertices[aCnt++] = ver[index[i1] * 3 + 2].toFloat()
@@ -104,7 +118,7 @@ class SkinMesh {
 
             //4頂点ポリゴン分割後のIndex数カウント
             var numNewIndex = 0
-            for (i1 in 0..mesh.GetNumPolygon() - 1) {
+            for (i1 in 0 until mesh.GetNumPolygon()) {
                 if (mesh.getPolygonSize(i1) == 3) {
                     numNewIndex += 3
                 } else {
@@ -115,7 +129,7 @@ class SkinMesh {
             val newIndex = IntArray(numNewIndex)
             var nIcnt = 0
             var Icnt = 0
-            for (i1 in 0..mesh.GetNumPolygon() - 1) {
+            for (i1 in 0 until mesh.GetNumPolygon()) {
                 newIndex[nIcnt++] = Icnt
                 newIndex[nIcnt++] = Icnt + 2
                 newIndex[nIcnt++] = Icnt + 1
@@ -141,7 +155,7 @@ class SkinMesh {
         }
         val mesh = fbx.getFbxMeshNode(0)
         //初期姿勢行列読み込み
-        for (i: Int in 0..numBone - 1) {
+        for (i: Int in 0 until numBone) {
             val defo = mesh!!.getDeformer(i)
             for (y in 0..3) {
                 for (x in 0..3) {
@@ -162,7 +176,7 @@ class SkinMesh {
         val ti: Long = de.getTimeFRAMES60(frame / 10)
         //次のポーズ行列
         val mesh = fbx.getFbxMeshNode(0)
-        for (i: Int in 0..numBone - 1) {
+        for (i: Int in 0 until numBone) {
             val defo = mesh!!.getDeformer(i)
             defo!!.EvaluateGlobalTransform(ti)
             for (y in 0..3) {
@@ -175,7 +189,7 @@ class SkinMesh {
     }
 
     private fun getCurrentPoseMatrix() {
-        for (i in 0..numBone - 1) {
+        for (i in 0 until numBone) {
             val stInd = i * 16
             val endInd = stInd + 16
             val elBindPose = bindPose!!.copyOfRange(stInd, endInd)
@@ -185,7 +199,7 @@ class SkinMesh {
             val ret = FloatArray(16)
             MatrixMultiply(ret, inv, elNewPose)
             var retInd = 0
-            for (i1 in stInd..endInd - 1) {
+            for (i1 in stInd until endInd) {
                 bone!![i1] = ret[retInd++]
             }
         }
@@ -204,10 +218,11 @@ class SkinMesh {
         scaz: Float = 1.0f
     ) {
         GLShader.startProgram(GLShader.SkinMesh)
-        Core.DepthTestOff()
+        Core.DepthTestOn()
+        Core.ALPHAlBlendOff()
         setNewPoseMatrices(ti)
         getCurrentPoseMatrix()
-        for (i: Int in 0..numMesh - 1) {
+        for (i: Int in 0 until numMesh) {
             bp!![i]!!.draw(movx, movy, movz, thex, they, thez, scax, scay, scaz, bone)
         }
     }
