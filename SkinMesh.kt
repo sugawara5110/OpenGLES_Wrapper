@@ -15,9 +15,21 @@ class SkinMesh {
     private var newPose: FloatArray? = null
     private var bone: FloatArray? = null
     private var currentframe = 0.0f
-    private var endframe = 600.0f
+    private var endframe = 0.0f
+    private var TimeFRAMES30on = true
+    private var AttitudeMode = GLShader.SkinMesh
 
-    fun create(con: Context, rawId: Int) {
+    fun initialAttitudeMode() {
+        AttitudeMode = GLShader.Basic3D
+    }
+
+    fun skinMeshMode() {
+        AttitudeMode = GLShader.SkinMesh
+    }
+
+    fun create(con: Context, rawId: Int, endFrame: Float, timeFRAMES: String = "30") {
+        if (timeFRAMES != "30") TimeFRAMES30on = false
+        endframe = endFrame
         fbx.setFbxFile(con, rawId)
         numMesh = fbx.getNumFbxMeshNode()
         numBone = fbx.getFbxMeshNode(0)!!.GetNumDeformer()
@@ -39,15 +51,15 @@ class SkinMesh {
                 dp!![i]!!.diffTexId = TextureManager.getTextureId(diffName)!!
             }
             if (mesh.getNormalTextureName(0).getName() != null) {
-                val norName = getNameFromPass(mesh.getNormalTextureName(0).getName())
-                dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
+                //val norName = getNameFromPass(mesh.getNormalTextureName(0).getName())
+                //dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
             }
-            dp!![i]!!.MVPMatrixHandle = GLShader.mvpMatrixHandle(GLShader.SkinMesh)!!
-            dp!![i]!!.WorldMatrixHandle = GLShader.worldMatrixHandle(GLShader.SkinMesh)!!
+            dp!![i]!!.MVPMatrixHandle = GLShader.mvpMatrixHandle(AttitudeMode)!!
+            dp!![i]!!.WorldMatrixHandle = GLShader.worldMatrixHandle(AttitudeMode)!!
             dp!![i]!!.BoneMatrixHandle = GLShader.boneMatrixHandle()
-            dp!![i]!!.DirLightHandle = GLShader.DirLightHandle(GLShader.SkinMesh)!!
-            dp!![i]!!.DiffuseHandle = GLShader.DiffuseHandle(GLShader.SkinMesh)!!
-            dp!![i]!!.AmbientHandle = GLShader.AmbientHandle(GLShader.SkinMesh)!!
+            dp!![i]!!.DirLightHandle = GLShader.DirLightHandle(AttitudeMode)!!
+            dp!![i]!!.DiffuseHandle = GLShader.DiffuseHandle(AttitudeMode)!!
+            dp!![i]!!.AmbientHandle = GLShader.AmbientHandle(AttitudeMode)!!
             dp!![i]!!.Diffuse[0] = mesh.getDiffuseColor(0, 0).toFloat()
             dp!![i]!!.Diffuse[1] = mesh.getDiffuseColor(0, 1).toFloat()
             dp!![i]!!.Diffuse[2] = mesh.getDiffuseColor(0, 2).toFloat()
@@ -144,9 +156,9 @@ class SkinMesh {
 
             bp!![i]!!.create(
                 dp!![i]!!,
-                GLShader.positionHandle(GLShader.SkinMesh)!!,
-                GLShader.normalHandle(GLShader.SkinMesh)!!,
-                GLShader.uvHandle(GLShader.SkinMesh)!!,
+                GLShader.positionHandle(AttitudeMode)!!,
+                GLShader.normalHandle(AttitudeMode)!!,
+                GLShader.uvHandle(AttitudeMode)!!,
                 allVertices,
                 newIndex,
                 GLShader.boneIndHandle(),
@@ -173,7 +185,12 @@ class SkinMesh {
         }
         val frame: Int = currentframe.toInt()
         val de = Deformer()
-        val ti: Long = de.getTimeFRAMES60(frame / 10)
+        var ti: Long = 0
+        if (TimeFRAMES30on) {
+            ti = de.getTimeFRAMES30(frame)
+        } else {
+            ti = de.getTimeFRAMES60(frame)
+        }
         //次のポーズ行列
         val mesh = fbx.getFbxMeshNode(0)
         for (i: Int in 0 until numBone) {
@@ -217,9 +234,7 @@ class SkinMesh {
         scay: Float = 1.0f,
         scaz: Float = 1.0f
     ) {
-        GLShader.startProgram(GLShader.SkinMesh)
-        Core.DepthTestOn()
-        Core.ALPHAlBlendOff()
+        GLShader.startProgram(AttitudeMode)
         setNewPoseMatrices(ti)
         getCurrentPoseMatrix()
         for (i: Int in 0 until numMesh) {
