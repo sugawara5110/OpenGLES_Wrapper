@@ -141,7 +141,7 @@ object Core {
         GLES30.glEnableVertexAttribArray(poshandle)
         GLES30.glEnableVertexAttribArray(norhandle)
         GLES30.glEnableVertexAttribArray(uvhandle)
-        if (boneIndhandle != 0) {
+        if (boneIndhandle > 0) {
             GLES30.glEnableVertexAttribArray(boneIndhandle)
             GLES30.glEnableVertexAttribArray(boneWeihandle)
         }
@@ -224,8 +224,8 @@ object Core {
         GLES30.glBindVertexArray(vaoId)
         GLES30.glUniformMatrix4fv(dp.MVPMatrixHandle, 1, false, mMVPMatrix, 0)
         GLES30.glUniformMatrix4fv(dp.WorldMatrixHandle, 1, false, worldMatrix, 0)
-        if (boneMatrix != null) {
-            val numMat = boneMatrix.size / 16
+        if (dp.BoneMatrixHandle > 0) {
+            val numMat = boneMatrix!!.size / 16
             GLES30.glUniformMatrix4fv(dp.BoneMatrixHandle, numMat, false, boneMatrix, 0)
         }
         GLES30.glUniform4f(dp.DiffuseHandle, dp.Diffuse[0], dp.Diffuse[1], dp.Diffuse[2], dp.Diffuse[3])

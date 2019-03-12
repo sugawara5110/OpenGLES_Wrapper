@@ -56,7 +56,7 @@ class SkinMesh {
             }
             dp!![i]!!.MVPMatrixHandle = GLShader.mvpMatrixHandle(AttitudeMode)!!
             dp!![i]!!.WorldMatrixHandle = GLShader.worldMatrixHandle(AttitudeMode)!!
-            dp!![i]!!.BoneMatrixHandle = GLShader.boneMatrixHandle()
+            if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) dp!![i]!!.BoneMatrixHandle = GLShader.boneMatrixHandle()
             dp!![i]!!.DirLightHandle = GLShader.DirLightHandle(AttitudeMode)!!
             dp!![i]!!.DiffuseHandle = GLShader.DiffuseHandle(AttitudeMode)!!
             dp!![i]!!.AmbientHandle = GLShader.AmbientHandle(AttitudeMode)!!
@@ -107,10 +107,15 @@ class SkinMesh {
                 }
             }
 
-            val allVertices = FloatArray(Core.numVerNorUVBoneIndWei * mesh.GetNumPolygonVertices())
+            var verOneSIze = Core.numVerNorUV
+            if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) {
+                verOneSIze = Core.numVerNorUVBoneIndWei
+            }
+            val allVertices = FloatArray(verOneSIze * mesh.GetNumPolygonVertices())
             var nCnt = 0
             var uvCnt = 0
             var aCnt = 0
+            var vCnt = 0
             for (i1 in 0 until mesh.GetNumPolygonVertices()) {
                 allVertices[aCnt++] = ver!![index!![i1] * 3].toFloat()
                 allVertices[aCnt++] = ver[index[i1] * 3 + 1].toFloat()
@@ -120,11 +125,13 @@ class SkinMesh {
                 allVertices[aCnt++] = nor[nCnt++].toFloat()
                 allVertices[aCnt++] = uv!![uvCnt++].toFloat()
                 allVertices[aCnt++] = 1.0f - uv[uvCnt++].toFloat()
-                for (i2 in 0..3) {
-                    allVertices[aCnt++] = boneWeightIndArr[index[i1] * 4 + i2].toFloat()
-                }
-                for (i2 in 0..3) {
-                    allVertices[aCnt++] = boneWeightArr[index[i1] * 4 + i2]
+                if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) {
+                    for (i2 in 0..3) {
+                        allVertices[aCnt++] = boneWeightIndArr[index[i1] * 4 + i2].toFloat()
+                    }
+                    for (i2 in 0..3) {
+                        allVertices[aCnt++] = boneWeightArr[index[i1] * 4 + i2]
+                    }
                 }
             }
 
@@ -133,7 +140,8 @@ class SkinMesh {
             for (i1 in 0 until mesh.GetNumPolygon()) {
                 if (mesh.getPolygonSize(i1) == 3) {
                     numNewIndex += 3
-                } else {
+                }
+                if (mesh.getPolygonSize(i1) == 4) {
                     numNewIndex += 6
                 }
             }
@@ -142,18 +150,29 @@ class SkinMesh {
             var nIcnt = 0
             var Icnt = 0
             for (i1 in 0 until mesh.GetNumPolygon()) {
-                newIndex[nIcnt++] = Icnt
-                newIndex[nIcnt++] = Icnt + 2
-                newIndex[nIcnt++] = Icnt + 1
-                Icnt += 3
+                if (mesh.getPolygonSize(i1) == 3) {
+                    newIndex[nIcnt++] = Icnt
+                    newIndex[nIcnt++] = Icnt + 2
+                    newIndex[nIcnt++] = Icnt + 1
+                    Icnt += 3
+                }
                 if (mesh.getPolygonSize(i1) == 4) {
+                    newIndex[nIcnt++] = Icnt
+                    newIndex[nIcnt++] = Icnt + 2
+                    newIndex[nIcnt++] = Icnt + 1
                     newIndex[nIcnt++] = Icnt
                     newIndex[nIcnt++] = Icnt + 3
                     newIndex[nIcnt++] = Icnt + 2
-                    Icnt += 3
+                    Icnt += 4
                 }
             }
 
+            var boneIndH = 0
+            var boneWeiH = 0
+            if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) {
+                boneIndH = GLShader.boneIndHandle()
+                boneWeiH = GLShader.boneWeiHandle()
+            }
             bp!![i]!!.create(
                 dp!![i]!!,
                 GLShader.positionHandle(AttitudeMode)!!,
@@ -161,8 +180,8 @@ class SkinMesh {
                 GLShader.uvHandle(AttitudeMode)!!,
                 allVertices,
                 newIndex,
-                GLShader.boneIndHandle(),
-                GLShader.boneWeiHandle()
+                boneIndH,
+                boneWeiH
             )
         }
         val mesh = fbx.getFbxMeshNode(0)
