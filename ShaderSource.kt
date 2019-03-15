@@ -39,36 +39,38 @@ object ShaderSource {
                     + "void main()\n"
                     + "{\n"
                     //スキニング
-                    + "   vec4 sPos = a_Position;\n"
-                    + "   vec3 sNor = a_Normal.xyz;\n"
+                    + "   vec4 sInPos = a_Position;\n"
+                    + "   vec3 sInNor = a_Normal.xyz;\n"
+                    + "   vec4 sOutPos = vec4(0.0, 0.0, 0.0, 1.0);\n"
+                    + "   vec3 sOutNor = vec3(0.0, 0.0, 0.0);\n"
                     //Bone1
                     + "   int iBone = int(a_BoneInd.x);\n"//1個目のBoneIndex取り出し
                     + "   float fwei = a_BoneWei.x;\n"//1個目のBoneWeight取り出し
                     + "   mat4 m = u_BoneMatrix[iBone];\n"//姿勢行列配列からiBone番目行列取り出し
-                    + "   sPos += (m * sPos) * fwei;\n"//スキニング後頂点 = 姿勢行列 * 頂点 * 頂点ウエイト(DirectXとは逆)
-                    + "   sNor += (mat3(m) * sNor) * fwei;\n"//スキニング後法線 = 姿勢行列 * 法線 * 頂点ウエイト
+                    + "   sOutPos += (m * sInPos) * fwei;\n"//スキニング後頂点 = 姿勢行列 * 頂点 * 頂点ウエイト(DirectXとは逆)
+                    + "   sOutNor += (mat3(m) * sInNor) * fwei;\n"//スキニング後法線 = 姿勢行列 * 法線 * 頂点ウエイト
                     //Bone2
                     + "   iBone = int(a_BoneInd.y);\n"
                     + "   fwei = a_BoneWei.y;\n"
                     + "   m = u_BoneMatrix[iBone];\n"
-                    + "   sPos += (m * sPos) * fwei;\n"
-                    + "   sNor += (mat3(m) * sNor) * fwei;\n"
+                    + "   sOutPos += (m * sInPos) * fwei;\n"
+                    + "   sOutNor += (mat3(m) * sInNor) * fwei;\n"
                     //Bone3
                     + "   iBone = int(a_BoneInd.z);\n"
                     + "   fwei = a_BoneWei.z;\n"
                     + "   m = u_BoneMatrix[iBone];\n"
-                    + "   sPos += (m * sPos) * fwei;\n"
-                    + "   sNor += (mat3(m) * sNor) * fwei;\n"
+                    + "   sOutPos += (m * sInPos) * fwei;\n"
+                    + "   sOutNor += (mat3(m) * sInNor) * fwei;\n"
                     //Bone4
                     + "   iBone = int(a_BoneInd.w);\n"
                     + "   fwei = a_BoneWei.w;\n"
                     + "   m = u_BoneMatrix[iBone];\n"
-                    + "   sPos += (m * sPos) * fwei;\n"
-                    + "   sNor += (mat3(m) * sNor) * fwei;\n"
+                    + "   sOutPos += (m * sInPos) * fwei;\n"
+                    + "   sOutNor += (mat3(m) * sInNor) * fwei;\n"
 
-                    + "   v_Normal = normalize(mat3(u_WorldMatrix) * sNor);\n"
+                    + "   v_Normal = normalize(mat3(u_WorldMatrix) * sOutNor);\n"
                     + "   v_Uv = a_Uv;\n"
-                    + "   gl_Position = u_MVPMatrix * sPos;\n"
+                    + "   gl_Position = u_MVPMatrix * sOutPos;\n"
                     + "}\n")
 
     //フラグメントシェーダ3D
