@@ -73,7 +73,7 @@ object ShaderSource {
                     + "   gl_Position = u_MVPMatrix * sOutPos;\n"
                     + "}\n")
 
-    //フラグメントシェーダ3D
+    //フラグメントシェーダ3D, NormalTexture無し
     const val fragmentShader3D = (
             "#version 300 es\n"
                     + "precision mediump float;\n"
@@ -90,8 +90,36 @@ object ShaderSource {
                     + "{\n"
                     + "   vec3 dir = normalize(u_DirLight);\n"
                     + "   float dirLight = max(dot(v_Normal, dir), 0.0);\n"
-                    + "   vec4 light = (u_Diffuse * dirLight) + u_Ambient;\n"
-                    + "   outColor = texture(texture0, v_Uv) * light;\n"
+                    + "   vec4 light = (u_Diffuse * dirLight);\n"
+                    + "   light.w = 1.0;\n"
+                    + "   vec4 light1 = light + u_Ambient;\n"
+                    + "   outColor = texture(texture0, v_Uv) * light1;\n"
+                    + "}\n")
+
+    //フラグメントシェーダ3D, NormalTexture有り
+    const val fragmentShader3DNorTex = (
+            "#version 300 es\n"
+                    + "precision mediump float;\n"
+                    + "uniform sampler2D texture0;\n"
+                    + "uniform sampler2D texture1;\n"
+                    + "uniform vec4 u_Diffuse;\n"
+                    + "uniform vec4 u_Ambient;\n"
+                    + "uniform vec3 u_DirLight;\n"
+                    + "in vec3 v_Normal;\n"
+                    + "in vec2 v_Uv;\n"
+
+                    + "out vec4 outColor;\n"
+
+                    + "void main()\n"
+                    + "{\n"
+                    + "   vec4 norT = texture(texture1, v_Uv);\n"
+                    + "   vec3 NT = normalize(v_Normal * norT.xyz);\n"
+                    + "   vec3 dir = normalize(u_DirLight);\n"
+                    + "   float dirLight = max(dot(NT, dir), 0.0);\n"
+                    + "   vec4 light = (u_Diffuse * dirLight);\n"
+                    + "   light.w = 1.0;\n"
+                    + "   vec4 light1 = light + u_Ambient;\n"
+                    + "   outColor = texture(texture0, v_Uv) * light1;\n"
                     + "}\n")
 
     //バーテックスシェーダ2D

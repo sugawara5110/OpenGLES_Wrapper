@@ -7,14 +7,15 @@ import java.nio.IntBuffer
 import android.opengl.GLES30
 
 class DrawParameter {
-    var diffTexId: Int = 0
-    var norTexId: Int = 0
-    var MVPMatrixHandle: Int = 0
-    var WorldMatrixHandle: Int = 0
-    var BoneMatrixHandle: Int = 0
-    var DiffuseHandle: Int = 0
-    var AmbientHandle: Int = 0
-    var DirLightHandle: Int = 0
+    var diffTexId: Int = -1
+    var norTexId: Int = -1
+    var MVPMatrixHandle: Int = -1
+    var WorldMatrixHandle: Int = -1
+    var Texture1Handle: Int = -1
+    var BoneMatrixHandle: Int = -1
+    var DiffuseHandle: Int = -1
+    var AmbientHandle: Int = -1
+    var DirLightHandle: Int = -1
     var Diffuse = FloatArray(4, { 1.0f })
     var Ambient = FloatArray(4, { 0.3f })
 }
@@ -58,9 +59,9 @@ object Core {
     private val worLookMatrix = FloatArray(16)
     private val mMVPMatrix = FloatArray(16)
 
-    fun clear() {
+    fun clear(r: Float = 0.0f, g: Float = 0.0f, b: Float = 0.0f) {
         GLES30.glClear(GLES30.GL_DEPTH_BUFFER_BIT or GLES30.GL_COLOR_BUFFER_BIT) //バッファのクリア
-        GLES30.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+        GLES30.glClearColor(r, g, b, 1.0f)
     }
 
     fun surfaceChanged(wid: Int, hei: Int) {
@@ -119,8 +120,8 @@ object Core {
         uvhandle: Int,
         allVertices: FloatArray?,
         index: IntArray?,
-        boneIndhandle: Int = 0,
-        boneWeihandle: Int = 0
+        boneIndhandle: Int = -1,
+        boneWeihandle: Int = -1
     ): Int {
         val vboId = IntArray(2)
         val vaoId = IntArray(1)
@@ -141,11 +142,11 @@ object Core {
         GLES30.glEnableVertexAttribArray(poshandle)
         GLES30.glEnableVertexAttribArray(norhandle)
         GLES30.glEnableVertexAttribArray(uvhandle)
-        if (boneIndhandle > 0) {
+        if (boneIndhandle != -1) {
             GLES30.glEnableVertexAttribArray(boneIndhandle)
             GLES30.glEnableVertexAttribArray(boneWeihandle)
         }
-        if (boneIndhandle == 0) {
+        if (boneIndhandle == -1) {
             GLES30.glVertexAttribPointer(poshandle, numVertex, GLES30.GL_FLOAT, false, VerNorUVSize, 0)
             GLES30.glVertexAttribPointer(norhandle, numNormal, GLES30.GL_FLOAT, false, VerNorUVSize, VerSize)
             GLES30.glVertexAttribPointer(uvhandle, numUV, GLES30.GL_FLOAT, false, VerNorUVSize, VerNorSize)
@@ -217,16 +218,21 @@ object Core {
 
     fun draw(vaoId: Int, numIndex: Int, worldMatrix: FloatArray, dp: DrawParameter, boneMatrix: FloatArray? = null) {
         updateMatrix(worldMatrix)
-        //テクスチャ有効化
-        GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
-        //テクスチャオブジェクトの指定
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dp.diffTexId)
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0)//テクスチャ0有効化
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dp.diffTexId)//テクスチャオブジェクトの指定
+        if (dp.Texture1Handle != -1) {
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE1)//テクスチャ1有効化
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dp.norTexId)
+        }
         GLES30.glBindVertexArray(vaoId)
         GLES30.glUniformMatrix4fv(dp.MVPMatrixHandle, 1, false, mMVPMatrix, 0)
         GLES30.glUniformMatrix4fv(dp.WorldMatrixHandle, 1, false, worldMatrix, 0)
-        if (dp.BoneMatrixHandle > 0) {
+        if (dp.BoneMatrixHandle != -1) {
             val numMat = boneMatrix!!.size / 16
             GLES30.glUniformMatrix4fv(dp.BoneMatrixHandle, numMat, false, boneMatrix, 0)
+        }
+        if (dp.Texture1Handle != -1) {
+            GLES30.glUniform1i(dp.Texture1Handle, 1)//シェーダーの1番テクスチャ
         }
         GLES30.glUniform4f(dp.DiffuseHandle, dp.Diffuse[0], dp.Diffuse[1], dp.Diffuse[2], dp.Diffuse[3])
         GLES30.glUniform4f(dp.AmbientHandle, dp.Ambient[0], dp.Ambient[1], dp.Ambient[2], dp.Ambient[3])

@@ -17,14 +17,24 @@ class SkinMesh {
     private var currentframe = 0.0f
     private var endframe = 0.0f
     private var TimeFRAMES30on = true
-    private var AttitudeMode = GLShader.SkinMesh
+    private var AttitudeMode: IntArray? = null
+    private var MeshMode = GLShader.SkinMesh
+    private var addNortex: Array<String?>? = null
+
+    fun addCreateNortextureArray(num: Int) {
+        addNortex = Array<String?>(num, { null })
+    }
+
+    fun addNortexture(index: Int, nortexName: String) {
+        addNortex!![index] = nortexName
+    }
 
     fun initialAttitudeMode() {
-        AttitudeMode = GLShader.Basic3D
+        MeshMode = GLShader.Basic3D
     }
 
     fun skinMeshMode() {
-        AttitudeMode = GLShader.SkinMesh
+        MeshMode = GLShader.SkinMesh
     }
 
     fun create(con: Context, rawId: Int, endFrame: Float, timeFRAMES: String = "30") {
@@ -32,6 +42,7 @@ class SkinMesh {
         endframe = endFrame
         fbx.setFbxFile(con, rawId)
         numMesh = fbx.getNumFbxMeshNode()
+        AttitudeMode = IntArray(numMesh, { MeshMode })
         numBone = fbx.getFbxMeshNode(0)!!.GetNumDeformer()
         bindPose = FloatArray(numBone * 16)
         newPose = FloatArray(numBone * 16)
@@ -51,15 +62,26 @@ class SkinMesh {
                 dp!![i]!!.diffTexId = TextureManager.getTextureId(diffName)!!
             }
             if (mesh.getNormalTextureName(0).getName() != null) {
-                //val norName = getNameFromPass(mesh.getNormalTextureName(0).getName())
-                //dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
+                val norName = getNameFromPass(mesh.getNormalTextureName(0).getName())
+                dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
+                if (MeshMode == GLShader.Basic3D) AttitudeMode!![i] = GLShader.Basic3DNormal
+                if (MeshMode == GLShader.SkinMesh) AttitudeMode!![i] = GLShader.SkinMeshNormal
+                dp!![i]!!.Texture1Handle = GLShader.texture1Handle(AttitudeMode!![i])!!
             }
-            dp!![i]!!.MVPMatrixHandle = GLShader.mvpMatrixHandle(AttitudeMode)!!
-            dp!![i]!!.WorldMatrixHandle = GLShader.worldMatrixHandle(AttitudeMode)!!
-            if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) dp!![i]!!.BoneMatrixHandle = GLShader.boneMatrixHandle()
-            dp!![i]!!.DirLightHandle = GLShader.DirLightHandle(AttitudeMode)!!
-            dp!![i]!!.DiffuseHandle = GLShader.DiffuseHandle(AttitudeMode)!!
-            dp!![i]!!.AmbientHandle = GLShader.AmbientHandle(AttitudeMode)!!
+            if (addNortex != null && addNortex!![i] != null) {
+                dp!![i]!!.norTexId = TextureManager.getTextureId(addNortex!![i]!!)!!
+                if (MeshMode == GLShader.Basic3D) AttitudeMode!![i] = GLShader.Basic3DNormal
+                if (MeshMode == GLShader.SkinMesh) AttitudeMode!![i] = GLShader.SkinMeshNormal
+                dp!![i]!!.Texture1Handle = GLShader.texture1Handle(AttitudeMode!![i])!!
+            }
+
+            dp!![i]!!.MVPMatrixHandle = GLShader.mvpMatrixHandle(AttitudeMode!![i])!!
+            dp!![i]!!.WorldMatrixHandle = GLShader.worldMatrixHandle(AttitudeMode!![i])!!
+            if (MeshMode == GLShader.SkinMesh) dp!![i]!!.BoneMatrixHandle =
+                GLShader.boneMatrixHandle(AttitudeMode!![i])!!
+            dp!![i]!!.DirLightHandle = GLShader.DirLightHandle(AttitudeMode!![i])!!
+            dp!![i]!!.DiffuseHandle = GLShader.DiffuseHandle(AttitudeMode!![i])!!
+            dp!![i]!!.AmbientHandle = GLShader.AmbientHandle(AttitudeMode!![i])!!
             dp!![i]!!.Diffuse[0] = mesh.getDiffuseColor(0, 0).toFloat()
             dp!![i]!!.Diffuse[1] = mesh.getDiffuseColor(0, 1).toFloat()
             dp!![i]!!.Diffuse[2] = mesh.getDiffuseColor(0, 2).toFloat()
@@ -108,7 +130,7 @@ class SkinMesh {
             }
 
             var verOneSIze = Core.numVerNorUV
-            if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) {
+            if (MeshMode == GLShader.SkinMesh) {
                 verOneSIze = Core.numVerNorUVBoneIndWei
             }
             val allVertices = FloatArray(verOneSIze * mesh.GetNumPolygonVertices())
@@ -125,7 +147,7 @@ class SkinMesh {
                 allVertices[aCnt++] = nor[nCnt++].toFloat()
                 allVertices[aCnt++] = uv!![uvCnt++].toFloat()
                 allVertices[aCnt++] = 1.0f - uv[uvCnt++].toFloat()
-                if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) {
+                if (MeshMode == GLShader.SkinMesh) {
                     for (i2 in 0..3) {
                         allVertices[aCnt++] = boneWeightIndArr[index[i1] * 4 + i2].toFloat()
                     }
@@ -169,15 +191,15 @@ class SkinMesh {
 
             var boneIndH = 0
             var boneWeiH = 0
-            if (AttitudeMode.compareTo(GLShader.SkinMesh) == 0) {
-                boneIndH = GLShader.boneIndHandle()
-                boneWeiH = GLShader.boneWeiHandle()
+            if (MeshMode == GLShader.SkinMesh) {
+                boneIndH = GLShader.boneIndHandle(AttitudeMode!![i])!!
+                boneWeiH = GLShader.boneWeiHandle(AttitudeMode!![i])!!
             }
             bp!![i]!!.create(
                 dp!![i]!!,
-                GLShader.positionHandle(AttitudeMode)!!,
-                GLShader.normalHandle(AttitudeMode)!!,
-                GLShader.uvHandle(AttitudeMode)!!,
+                GLShader.positionHandle(AttitudeMode!![i])!!,
+                GLShader.normalHandle(AttitudeMode!![i])!!,
+                GLShader.uvHandle(AttitudeMode!![i])!!,
                 allVertices,
                 newIndex,
                 boneIndH,
@@ -241,6 +263,12 @@ class SkinMesh {
         }
     }
 
+    fun addALPHA(al: Float) {
+        for (i: Int in 0 until numMesh) {
+            dp!![i]!!.Ambient[3] = al
+        }
+    }
+
     fun draw(
         ti: Float,
         movx: Float = 0.0f,
@@ -253,10 +281,10 @@ class SkinMesh {
         scay: Float = 1.0f,
         scaz: Float = 1.0f
     ) {
-        GLShader.startProgram(AttitudeMode)
         setNewPoseMatrices(ti)
         getCurrentPoseMatrix()
         for (i: Int in 0 until numMesh) {
+            GLShader.startProgram(AttitudeMode!![i])
             bp!![i]!!.draw(movx, movy, movz, thex, they, thez, scax, scay, scaz, bone)
         }
     }

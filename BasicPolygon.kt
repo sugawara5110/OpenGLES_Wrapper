@@ -23,8 +23,8 @@ class BasicPolygon {
         uvhandle: Int,
         allVertices: FloatArray?,
         index: IntArray?,
-        boneIndhandle: Int = 0,
-        boneWeihandle: Int = 0
+        boneIndhandle: Int = -1,
+        boneWeihandle: Int = -1
     ) {
         dp = Dp
         numIndex = index!!.size
