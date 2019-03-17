@@ -1,3 +1,5 @@
 # OpenGLES_Wrapper
 
-OpenGLES ���b�p�[���C�u�����ł�
+OpenGLES ラッパーライブラリです
+
+SkinMesh読み込みでは自作のFbxLoaderを内部で呼んでます
