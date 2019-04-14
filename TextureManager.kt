@@ -5,7 +5,6 @@ import android.opengl.GLUtils
 import android.graphics.BitmapFactory
 import android.graphics.Bitmap.Config
 import android.content.res.Resources
-import jp.sugasato.fbxloaderkt.nameComparison
 
 object TextureManager {
 

@@ -1,8 +1,12 @@
 package jp.sugasato.opengles_wrapperkt
 
-import jp.sugasato.fbxloaderkt.FbxLoader
+import jp.sugasato.fbxloaderjni.FbxLoader
 import android.content.Context
-import jp.sugasato.fbxloaderkt.Deformer
+import jp.sugasato.fbxloaderjni.loadFbxLoader
+
+fun loadSkinMesh() {
+    loadFbxLoader()
+}
 
 class SkinMesh {
 
@@ -20,6 +24,10 @@ class SkinMesh {
     private var AttitudeMode: IntArray? = null
     private var MeshMode = GLShader.SkinMesh
     private var addNortex: Array<String?>? = null
+
+    fun destroy() {
+        fbx.destroy()
+    }
 
     fun addCreateNortextureArray(num: Int) {
         addNortex = Array<String?>(num, { null })
@@ -57,12 +65,12 @@ class SkinMesh {
             val nor = mesh.getNormal(0)
             val uv = mesh.getAlignedUV(0)
 
-            if (mesh.getDiffuseTextureName(0).getName() != null) {
-                val diffName = getNameFromPass(mesh.getDiffuseTextureName(0).getName())
+            if (mesh.getDiffuseTextureName(0) != null) {
+                val diffName = getNameFromPass(mesh.getDiffuseTextureName(0))
                 dp!![i]!!.diffTexId = TextureManager.getTextureId(diffName)!!
             }
-            if (mesh.getNormalTextureName(0).getName() != null) {
-                val norName = getNameFromPass(mesh.getNormalTextureName(0).getName())
+            if (mesh.getNormalTextureName(0) != null) {
+                val norName = getNameFromPass(mesh.getNormalTextureName(0))
                 dp!![i]!!.norTexId = TextureManager.getTextureId(norName)!!
                 if (MeshMode == GLShader.Basic3D) AttitudeMode!![i] = GLShader.Basic3DNormal
                 if (MeshMode == GLShader.SkinMesh) AttitudeMode!![i] = GLShader.SkinMeshNormal
@@ -225,15 +233,15 @@ class SkinMesh {
             return false
         }
         val frame: Int = currentframe.toInt()
-        val de = Deformer()
+        val mesh = fbx.getFbxMeshNode(0)
+        val de = mesh!!.getDeformer(0)
         var ti: Long = 0
         if (TimeFRAMES30on) {
-            ti = de.getTimeFRAMES30(frame)
+            ti = de!!.getTimeFRAMES30(frame)
         } else {
-            ti = de.getTimeFRAMES60(frame)
+            ti = de!!.getTimeFRAMES60(frame)
         }
         //次のポーズ行列
-        val mesh = fbx.getFbxMeshNode(0)
         for (i: Int in 0 until numBone) {
             val defo = mesh!!.getDeformer(i)
             defo!!.EvaluateGlobalTransform(ti)

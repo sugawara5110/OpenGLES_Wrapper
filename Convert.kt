@@ -341,3 +341,41 @@ fun getNameFromPass(pass:CharArray?):CharArray {
     return ret
 }
 
+fun nameComparison(name1: CharArray?, name2: CharArray?): Boolean {
+    var stInd1 = 0
+    var stInd2 = 0
+    for (i in name1!!.size - 1 downTo 0) {
+        if (name1[i] == ' ') {
+            stInd1 = i + 1
+            break
+        }
+    }
+    for (i in name2!!.size - 1 downTo 0) {
+        if (name2[i] == ' ') {
+            stInd2 = i + 1
+            break
+        }
+    }
+    val n1 = name1.copyOfRange(stInd1, name1.size)
+    val n2 = name2.copyOfRange(stInd2, name2.size)
+    if (n1.size != n2.size) return false
+    for (i in 0 until n1.size) {
+        if (n1[i] != n2[i]) return false
+    }
+    return true
+}
+
+fun nameComparison(name1: Array<Char?>, name2: String): Boolean {
+    val ch1 = CharArray(name1.size)
+    val ch2 = CharArray(name2.length)
+    for (i in 0..name1.size - 1) ch1[i] = name1[i]!!.toChar()
+    for (i in 0..name2.length - 1) ch2[i] = name2[i].toChar()
+    return nameComparison(ch1, ch2)
+}
+
+fun nameComparison(name1: CharArray?, name2: String): Boolean {
+    val ch1 = name1!!.copyOf()
+    val ch2 = CharArray(name2.length)
+    for (i in 0..name2.length - 1) ch2[i] = name2[i].toChar()
+    return nameComparison(ch1, ch2)
+}
